@@ -4,46 +4,33 @@ import "./../styles/App.css";
 const API_KEY = "349b626bd63d094becd7e6cd1ce19e33";
 
 const App = () => {
-  const [query, setQuery] = useState("");
-  const [weather, setWeather] = useState(null);
+  const [city, setCity] = useState("");
+  const [weatherData, setWeatherData] = useState(null);
   const [error, setError] = useState("");
 
-  const fetchWeather = async () => {
-    setError("");
-    setWeather(null);
-    if (!query) {
+  const getWeather = () => {
+    if (!city) {
       setError("Please enter a city name.");
+      setWeatherData(null);
       return;
     }
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${API_KEY}&units=metric`
-      );
-      const data = await response.json();
-      if (data.cod !== 200) {
-        setError(data.message);
-        return;
-      }
-      setWeather({
-        temp: data.main.temp,
-        desc: data.weather[0].description,
-        icon: data.weather[0].icon,
-        city: data.name,
-        country: data.sys.country
+    setError("");
+    fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.cod !== 200) {
+          setError(data.message || "City not found.");
+          setWeatherData(null);
+        } else {
+          setWeatherData(data);
+        }
+      })
+      .catch(() => {
+        setError("Failed to fetch weather data.");
+        setWeatherData(null);
       });
-    } catch (e) {
-      setError("Failed to fetch weather.");
-    }
-  };
-
-  const handleInput = (e) => {
-    setQuery(e.target.value);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      fetchWeather();
-    }
   };
 
   return (
@@ -53,27 +40,26 @@ const App = () => {
         className="search"
         type="text"
         placeholder="Enter a city"
-        value={query}
-        onChange={handleInput}
-        onKeyDown={handleKeyDown}
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
       />
-      {error && <div style={{ color: "red", margin: "12px" }}>{error}</div>}
-      {weather && (
+      <button onClick={getWeather}>Get Weather</button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {weatherData && (
         <div className="weather">
           <h2>
-            {weather.city}, {weather.country}
+            {weatherData.name}, {weatherData.sys.country}
           </h2>
-          <div>
-            <img
-              src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-              alt={weather.desc}
-              style={{ verticalAlign: "middle" }}
-            />
-            <span style={{ fontSize: "2rem" }}>{weather.temp}°C</span>
-          </div>
-          <div style={{ textTransform: "capitalize" }}>
-            {weather.desc}
-          </div>
+          <p>
+            Temperature: {weatherData.main.temp}°C
+          </p>
+          <p>
+            {weatherData.weather[0].description}
+          </p>
+          <img
+            src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`}
+            alt={weatherData.weather[0].description}
+          />
         </div>
       )}
     </div>
