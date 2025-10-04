@@ -25,6 +25,7 @@ const App = () => {
           setWeatherData(null);
         } else {
           setWeatherData(data);
+          setCity(""); // clear input after successful fetch
         }
       })
       .catch(() => {
