@@ -1,70 +1,65 @@
-import React, { useState } from "react";
-import "./../styles/App.css";
+import React, { useState } from 'react';
+import 'regenerator-runtime/runtime';
 
-const API_KEY = "349b626bd63d094becd7e6cd1ce19e33";
+const API_KEY = '9fadd7fe702df1756101a89462ef75fa'; 
 
-const App = () => {
-  const [city, setCity] = useState("");
-  const [weatherData, setWeatherData] = useState(null);
-  const [error, setError] = useState("");
+function App() {
+  const [query, setQuery] = useState('');
+  const [weather, setWeather] = useState(null);
+  const [error, setError] = useState(null);
 
-  const getWeather = () => {
-    if (!city) {
-      setError("Please enter a city name.");
-      setWeatherData(null);
-      return;
+  const fetchWeather = async () => {
+    try { 
+      setError(null);
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${API_KEY}&units=metric`
+      );
+      if (!response.ok) {
+        throw new Error('City not found');
+      }
+      const data = await response.json();
+      setWeather(data);
+      setQuery('');  // Clear input after successful fetch
+    } catch (err) {
+      setWeather(null);
+      setError(err.message);
     }
-    setError("");
-    fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.cod !== 200) {
-          setError(data.message || "City not found.");
-          setWeatherData(null);
-        } else {
-          setWeatherData(data);
-          setCity(""); // clear input after successful fetch
-        }
-      })
-      .catch(() => {
-        setError("Failed to fetch weather data.");
-        setWeatherData(null);
-      });
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      fetchWeather();
+    }
   };
 
   return (
     <div>
-      {/* Do not remove the main div */}
       <input
-        className="search"
         type="text"
-        placeholder="Enter a city"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
+        className="search"
+        placeholder="Enter city name"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyPress}
       />
-      <button onClick={getWeather}>Get Weather</button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {weatherData && (
+      {error && <div className="error">{error}</div>}
+      {weather && (
         <div className="weather">
           <h2>
-            {weatherData.name}, {weatherData.sys.country}
+            {weather.name}, {weather.sys.country}
           </h2>
           <p>
-            Temperature: {weatherData.main.temp}°C
+            <img
+              src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+              alt={weather.weather[0].description}
+            />
           </p>
-          <p>
-            {weatherData.weather[0].description}
-          </p>
-          <img
-            src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`}
-            alt={weatherData.weather[0].description}
-          />
+          <p>Temperature: {weather.main.temp}°C</p>
+          <p>{weather.weather[0].description}</p>
         </div>
       )}
     </div>
   );
-};
+}
 
 export default App;
